@@ -81,6 +81,7 @@ parser.add_argument(
     choices=["math", "efficient", "flash", "flash_external"],
 )
 parser.add_argument("--test-datasets", nargs="+", default=[], help="test samples to process")
+parser.add_argument("--use-torchrun", action="store_true", default=None, help="use torchrun for distributed data parallalism")
 
 
 def get_outdir(resume_training, load):
@@ -119,7 +120,9 @@ def main():
 
     logging.basicConfig(level=logging.INFO)
     world_size = args.gpus if args.gpus > 0 else 1  # will be 1 for both cpu (args.gpu < 1) and single-gpu (1)
-
+    if args.use_torchrun:
+        world_size = os.environ["WORLD_SIZE"]
+        
     with open(args.config, "r") as stream:  # load config (includes: which physics samples, model params)
         config = yaml.safe_load(stream)
 

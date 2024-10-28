@@ -1126,6 +1126,13 @@ def device_agnostic_run(config, args, world_size, outdir):
     _configLogger("mlpf", filename=logfile)
 
     if config["gpus"]:
+
+        if config["use_torchrun"]:
+            rank = os.environ["LOCAL_RANK"]
+            torch.cuda.set_device(int(rank))
+            run(rank, world_size, config, args, outdir, logfile)
+            return 
+        
         assert (
             world_size <= torch.cuda.device_count()
         ), f"--gpus is too high (specified {world_size} gpus but only {torch.cuda.device_count()} gpus are available)"
