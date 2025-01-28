@@ -27,7 +27,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--config", type=str, default=None, help="yaml config")
 parser.add_argument("--prefix", type=str, default=None, help="prefix appended to result dir name")
 parser.add_argument("--data-dir", type=str, default=None, help="path to `tensorflow_datasets/`")
-parser.add_argument("--gpus", type=int, default=None, help="to use CPU set to 0; else e.g., 4")
+parser.add_argument("--gpus", type=int, default=None, help="to use CPU set to 0; else e.g., 4. Only used for single node training. Number of GPUs for multi node training is set by torchrun")
 parser.add_argument("--gpu-batch-multiplier", type=int, default=None, help="Increase batch size per GPU by this constant factor")
 parser.add_argument("--num-workers", type=int, default=None, help="number of processes to load the data")
 parser.add_argument("--prefetch-factor", type=int, default=None, help="number of samples to fetch & prefetch at every call")
@@ -84,6 +84,7 @@ parser.add_argument(
     choices=["math", "efficient", "flash", "flash_external"],
 )
 parser.add_argument("--test-datasets", nargs="+", default=[], help="test samples to process")
+parser.add_argument("--use-torchrun", action="store_true", default=None, help="use torchrun for multi node multi gpu training")
 
 parser.add_argument(
     "--finetune",
@@ -127,8 +128,8 @@ def main():
         )
 
     logging.basicConfig(level=logging.INFO)
-    world_size = args.gpus if args.gpus > 0 else 1  # will be 1 for both cpu (args.gpu < 1) and single-gpu (1)
-
+    number_gpus = args.gpus if args.gpus > 0 else 1  # will be 1 for both cpu (args.gpu < 1) and single-gpu (1)
+        
     with open(args.config, "r") as stream:  # load config (includes: which physics samples, model params)
         config = yaml.safe_load(stream)
 
@@ -176,7 +177,7 @@ def main():
         if args.ray_train:
             run_ray_training(config, args, outdir)
         else:
-            device_agnostic_run(config, world_size, outdir)
+            device_agnostic_run(config, number_gpus, outdir)
 
 
 if __name__ == "__main__":
