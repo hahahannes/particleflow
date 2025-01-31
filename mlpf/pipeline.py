@@ -171,7 +171,7 @@ def main():
 
         # Save config for later reference. Note that saving happens after parameters are overwritten by cmd line args.
         config_filename = "train-config.yaml" if args.train else "test-config.yaml"
-        with open((Path(outdir) / config_filename), "w") as file:
+        with open((Path(outdir) / config_filename), "w+") as file:
             yaml.dump(config, file)
 
         if args.ray_train:

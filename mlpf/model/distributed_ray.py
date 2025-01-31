@@ -241,7 +241,7 @@ def train_ray_trial(config, args, outdir=None):
     print(table)
 
     if (rank == 0) or (rank == "cpu"):
-        with open(os.path.join(outdir, "num_params.csv"), "w", newline="") as f:
+        with open(os.path.join(outdir, "num_params.csv"), "w+", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["trainable_params", "nontrainable_params", "total_params"])
             writer.writerow([trainable_params, nontrainable_params, trainable_params + nontrainable_params])
