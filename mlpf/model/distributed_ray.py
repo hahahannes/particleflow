@@ -135,10 +135,11 @@ def run_hpo(config, args):
 
     if not args.ray_local:
         _logger.info("Inititalizing ray...")
-        ray.init(
-            address=os.environ["ip_head"],
-            _node_ip_address=os.environ["head_node_ip"],
-        )
+        ray.init(address="auto")
+        #ray.init(
+        #    address=os.environ["ip_head"],
+        #    _node_ip_address=os.environ["head_node_ip"],
+        #)
         _logger.info("Done.")
 
     sched = get_raytune_schedule(config["raytune"])
