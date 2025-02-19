@@ -841,7 +841,7 @@ def device_agnostic_run(config, number_gpus, outdir):
 
             os.environ["MASTER_ADDR"] = "localhost"
             os.environ["MASTER_PORT"] = "12355"
-            dist.init_process_group("nccl", rank=rank, world_size=number_gpus)  # (nccl should be faster than gloo)
+            dist.init_process_group("gloo", rank=rank, world_size=number_gpus)  # (nccl should be faster than gloo)
 
             mp.spawn(
                 run,
