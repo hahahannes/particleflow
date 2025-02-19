@@ -833,7 +833,7 @@ def device_agnostic_run(config, number_gpus, outdir):
         logfile = f"{outdir}/test.log"
     _configLogger("mlpf", filename=logfile)
 
-    if config.use_torchrun:
+    if config["use_torchrun"]:
         dist.init_process_group("nccl")
         local_rank = os.environ["LOCAL_RANK"]
         world_size = os.environ["WORLD_SIZE"]
