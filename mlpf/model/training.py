@@ -821,6 +821,7 @@ def override_config(config: dict, args):
     config["train"] = args.train
     config["test"] = args.test
     config["make_plots"] = args.make_plots
+    config["use_torchrun"] = args.use_torchrun
 
     return config
 
