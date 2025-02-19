@@ -597,6 +597,12 @@ def run_test(rank, world_size, config, outdir, model, sample, testdir_name, dtyp
         dist.barrier()  # block until all workers finished executing run_predictions()
 
 
+def run_with_ddp(rank, world_size, config, outdir, logfile):
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12355"
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)  # (nccl should be faster than gloo)
+    run(rank, world_size, config, outdir, logfile)
+
 def run(rank, world_size, config, outdir, logfile):
     if (rank == 0) or (rank == "cpu"):  # keep writing the logs
         _configLogger("mlpf", filename=logfile)
@@ -608,8 +614,7 @@ def run(rank, world_size, config, outdir, logfile):
 
     start_epoch = 1
     checkpoint_dir = Path(outdir) / "checkpoints"
-    checkpoint_dir.mkdir(parents=True, exist_ok=True)
-
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)        
     if config["load"]:  # load a pre-trained model
 
         if config["finetune"]:
@@ -828,7 +833,14 @@ def device_agnostic_run(config, number_gpus, outdir):
         logfile = f"{outdir}/test.log"
     _configLogger("mlpf", filename=logfile)
 
-    if number_gpus:
+    if config.use_torchrun:
+        dist.init_process_group("nccl")
+        local_rank = os.environ["LOCAL_RANK"]
+        world_size = os.environ["WORLD_SIZE"]
+        _logger.info(f"Will use multi-node multi-gpu using Torchrun: local rank: {rank} world size: {world_size}", color="purple")
+        run(local_rank, world_size, config, outdir, logfile)
+        dist.destroy_process_group()
+    elif number_gpus:
         assert (
             number_gpus <= torch.cuda.device_count()
         ), f"--gpus is too high (specified {number_gpus} gpus but only {torch.cuda.device_count()} gpus are available)"
@@ -839,12 +851,8 @@ def device_agnostic_run(config, number_gpus, outdir):
             for rank in range(number_gpus):
                 _logger.info(torch.cuda.get_device_name(rank), color="purple")
 
-            os.environ["MASTER_ADDR"] = "localhost"
-            os.environ["MASTER_PORT"] = "12355"
-            dist.init_process_group("gloo", rank=rank, world_size=number_gpus)  # (nccl should be faster than gloo)
-
             mp.spawn(
-                run,
+                run_with_ddp,
                 args=(number_gpus, config, outdir, logfile),
                 nprocs=number_gpus,
                 join=True,
@@ -854,13 +862,6 @@ def device_agnostic_run(config, number_gpus, outdir):
             rank = 0
             _logger.info(f"Will use single-gpu: {torch.cuda.get_device_name(rank)}", color="purple")
             run(rank, number_gpus, config, outdir, logfile)
-    elif config.use_torchrun:
-        dist.init_process_group("nccl")
-        local_rank = os.environ["LOCAL_RANK"]
-        world_size = os.environ["WORLD_SIZE"]
-        _logger.info(f"Will use multi-node multi-gpu using Torchrun: local rank: {rank} world size: {world_size}", color="purple")
-        run(local_rank, world_size, config, outdir, logfile)
-        dist.destroy_process_group()
     else:
         rank = "cpu"
         _logger.info("Will use cpu", color="purple")
