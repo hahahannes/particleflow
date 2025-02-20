@@ -602,6 +602,7 @@ def run_with_ddp(rank, world_size, config, outdir, logfile):
     os.environ["MASTER_PORT"] = "12355"
     dist.init_process_group("nccl", rank=rank, world_size=world_size)  # (nccl should be faster than gloo)
     run(rank, world_size, config, outdir, logfile)
+    dist.destroy_process_group()
 
 def run(rank, world_size, config, outdir, logfile):
     if (rank == 0) or (rank == "cpu"):  # keep writing the logs
@@ -858,7 +859,6 @@ def device_agnostic_run(config, number_gpus, outdir):
                 nprocs=number_gpus,
                 join=True,
             )
-            dist.destroy_process_group()
         elif number_gpus == 1:
             rank = 0
             _logger.info(f"Will use single-gpu: {torch.cuda.get_device_name(rank)}", color="purple")
