@@ -839,7 +839,7 @@ def device_agnostic_run(config, number_gpus, outdir):
         dist.init_process_group("nccl")
         local_rank = os.environ["LOCAL_RANK"]
         world_size = os.environ["WORLD_SIZE"]
-        _logger.info(f"Will use multi-node multi-gpu using Torchrun: local rank: {rank} world size: {world_size}", color="purple")
+        _logger.info(f"Will use multi-node multi-gpu using Torchrun: local rank: {local_rank} world size: {world_size}", color="purple")
         run(local_rank, world_size, config, outdir, logfile)
         dist.destroy_process_group()
     elif number_gpus:
