@@ -128,11 +128,12 @@ def predict_one_batch(conv_type, model, i, batch, rank, jetdef, jet_ptcut, jet_m
         }
     )
 
-    awkward.to_parquet(
-        awkward.Array({"inputs": Xs, "particles": awkvals, "jets": jets_coll, "matched_jets": matched_jets, "genmet": batch.genmet.cpu()}),
-        outfile,
-    )
-    _logger.info(f"Saved predictions at {outfile}")
+    if (rank == 0) or (rank == "cpu"):
+        awkward.to_parquet(
+            awkward.Array({"inputs": Xs, "particles": awkvals, "jets": jets_coll, "matched_jets": matched_jets, "genmet": batch.genmet.cpu()}),
+            outfile,
+        )
+        _logger.info(f"Saved predictions at {outfile}")
 
 
 def predict_one_batch_args(args):
